@@ -74,7 +74,7 @@ class MainActivity : AppCompatActivity() {
                 if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
 
                     val builder = AlertDialog.Builder(this)
-                    builder.setMessage("Permission to access the microphone is required for this app to record audio.")
+                    builder.setMessage("Permission to access the external storage is required for this app to download media.")
                         .setTitle("Permission required")
                     builder.setPositiveButton("OK") { dialog, id ->
 
