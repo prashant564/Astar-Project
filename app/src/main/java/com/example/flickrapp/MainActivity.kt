@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.example.flickrapp
 
 import android.Manifest
@@ -7,8 +9,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Environment.DIRECTORY_DOWNLOADS
-import android.os.Environment.DIRECTORY_PICTURES
+import android.os.Environment
 import android.util.Log
 import android.view.View
 import android.widget.Toast
@@ -20,6 +21,7 @@ import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.activity_main.*
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings.PluginState
+import java.io.File
 
 
 
@@ -28,6 +30,8 @@ import android.webkit.WebSettings.PluginState
 class MainActivity : AppCompatActivity() {
 
     private val REQUEST_CODE = 112
+    private val folderName: String = "astarProject"
+
     override fun onCreate(savedInstanceState: Bundle?) {
 
         super.onCreate(savedInstanceState)
@@ -63,15 +67,49 @@ class MainActivity : AppCompatActivity() {
             })
     }
 
+
+    override fun onStart() {
+        super.onStart()
+
+        createFolder()
+    }
+
+
+
+
+    private fun createFolder(){
+
+        val myFolder = "${Environment.getExternalStorageDirectory()}/${folderName}"
+        val f= File(myFolder)
+        if(!f.exists())
+            if(!f.mkdir()){
+                Toast.makeText(this, "$myFolder can't be created.", Toast.LENGTH_SHORT).show()
+
+            }
+            else
+                Toast.makeText(this, "$myFolder can be created.", Toast.LENGTH_SHORT).show()
+        else
+            return
+    }
+
+
+
     private fun setStoragePermissions() {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
 
 
-
-                if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+                if (ActivityCompat.shouldShowRequestPermissionRationale(
+                        this,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE
+                    )
+                ) {
 
                     val builder = AlertDialog.Builder(this)
                     builder.setMessage("Permission to access the external storage is required for this app to download media.")
@@ -79,19 +117,26 @@ class MainActivity : AppCompatActivity() {
                     builder.setPositiveButton("OK") { dialog, id ->
 
                         Log.i("MainActivity", "Clicked")
-                        ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), REQUEST_CODE)
+                        ActivityCompat.requestPermissions(
+                            this,
+                            arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                            REQUEST_CODE
+                        )
                     }
 
                     val dialog = builder.create()
                     dialog.show()
 
-                }
-                else{
-                    ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), REQUEST_CODE)
+                } else {
+                    ActivityCompat.requestPermissions(
+                        this,
+                        arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                        REQUEST_CODE
+                    )
                 }
 
 
-            }else {
+            } else {
                 return
             }
 
@@ -100,8 +145,8 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-
     }
+
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
 
@@ -131,13 +176,11 @@ class MainActivity : AppCompatActivity() {
              setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI or DownloadManager.Request.NETWORK_MOBILE).
              setTitle("Download").
              setDescription("The file is downloading").
-             setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED).setDestinationInExternalPublicDir(DIRECTORY_PICTURES, "${System.currentTimeMillis()}")
+             setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED).setDestinationInExternalPublicDir("/astarProject", "${System.currentTimeMillis()}")
 
 
        val manager = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
        manager.enqueue(request)
-
-
    }
 
 
@@ -147,41 +190,19 @@ class MainActivity : AppCompatActivity() {
            setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI or DownloadManager.Request.NETWORK_MOBILE).
            setTitle("Download").
            setDescription("The file is downloading").
-           setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED).setDestinationInExternalPublicDir(
-           DIRECTORY_DOWNLOADS, "${System.currentTimeMillis()}")
+           setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED).setDestinationInExternalPublicDir("/astarProject", "${System.currentTimeMillis()}")
 
 
        val manager = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
        manager.enqueue(request)
-
    }
 
    private fun displayVideo(video_url: String){
 
-           videoView_set_video.getSettings().setJavaScriptEnabled(true)
-           videoView_set_video.getSettings().setPluginState(PluginState.ON)
+       videoView_set_video.settings.javaScriptEnabled = true
+       videoView_set_video.settings.pluginState = PluginState.ON
            videoView_set_video.loadUrl(video_url)
-           videoView_set_video.setWebChromeClient(WebChromeClient())
-
-//       val uri = Uri.parse(video_url)
-//       videoView_set_video.setVideoURI(uri)
-//       progress_bar_video.visibility = View.VISIBLE
-//
-//
-//       videoView_set_video.setOnPreparedListener {
-//           mediaController.setAnchorView(video_container)
-//           videoView_set_video.setMediaController(mediaController)
-//           videoView_set_video.seekTo(playback_position)
-//           videoView_set_video.rotation = 90f
-//           videoView_set_video.start()
-//       }
-//
-//       videoView_set_video.setOnInfoListener{ player, what, extras ->
-//
-//           if(what==MediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START)
-//               progress_bar_video.visibility = View.INVISIBLE
-//           true
-//       }
+       videoView_set_video.webChromeClient = WebChromeClient()
    }
 
 }
