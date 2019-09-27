@@ -6,6 +6,7 @@ import android.Manifest
 import android.app.DownloadManager
 import android.content.Context
 import android.content.pm.PackageManager
+import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -19,18 +20,16 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.activity_main.*
-import android.webkit.WebChromeClient
-import android.webkit.WebSettings.PluginState
+import android.widget.MediaController
 import java.io.File
-
-
-
 
 
 class MainActivity : AppCompatActivity() {
 
     private val REQUEST_CODE = 112
     private val folderName: String = "astarProject"
+    private var playbackPosition = 0
+    private lateinit var mediaController: MediaController
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -38,7 +37,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         setStoragePermissions()
 
-            button_download_image.setOnClickListener(object: View.OnClickListener{
+        button_download_image.setOnClickListener(object: View.OnClickListener{
                 override fun onClick(p0: View?) {
 
                     this@MainActivity.runOnUiThread(object: Runnable{
@@ -46,7 +45,7 @@ class MainActivity : AppCompatActivity() {
                         override fun run() {
                             imageView_display_image.visibility = View.VISIBLE
                             Picasso.get().load(editText_enter_url.text.toString()).into(imageView_display_image)
-                            saveImageToStorage(editText_enter_url.text.toString())
+                            saveFileToStorage(editText_enter_url.text.toString())
                         }
                     })
 
@@ -60,7 +59,7 @@ class MainActivity : AppCompatActivity() {
                     this@MainActivity.runOnUiThread(object : Runnable{
                         override fun run() {
                             displayVideo(editText_enter_video_url.text.toString())
-                            saveVideoToStorage(editText_enter_video_url.text.toString())
+                            saveFileToStorage(editText_enter_video_url.text.toString())
                         }
                     })
                 }
@@ -68,14 +67,17 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    override fun onStart() {
-        super.onStart()
+    override fun onPause() {
+        super.onPause()
 
-        createFolder()
+        videoView_set_video.pause()
+        playbackPosition = videoView_set_video.currentPosition
     }
 
-
-
+    override fun onStop() {
+        videoView_set_video.stopPlayback()
+        super.onStop()
+    }
 
     private fun createFolder(){
 
@@ -91,8 +93,6 @@ class MainActivity : AppCompatActivity() {
         else
             return
     }
-
-
 
     private fun setStoragePermissions() {
 
@@ -137,12 +137,12 @@ class MainActivity : AppCompatActivity() {
 
 
             } else {
-                return
+                createFolder()
             }
 
         } else {
 
-            return
+            createFolder()
         }
 
     }
@@ -170,9 +170,9 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-   private fun saveImageToStorage(image_url: String){
+   private fun saveFileToStorage(url: String){
 
-         val request = DownloadManager.Request(Uri.parse(image_url)).
+         val request = DownloadManager.Request(Uri.parse(url)).
              setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI or DownloadManager.Request.NETWORK_MOBILE).
              setTitle("Download").
              setDescription("The file is downloading").
@@ -184,25 +184,28 @@ class MainActivity : AppCompatActivity() {
    }
 
 
-   private fun saveVideoToStorage(video_url: String){
-
-       val request = DownloadManager.Request(Uri.parse(video_url)).
-           setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI or DownloadManager.Request.NETWORK_MOBILE).
-           setTitle("Download").
-           setDescription("The file is downloading").
-           setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED).setDestinationInExternalPublicDir("/astarProject", "${System.currentTimeMillis()}")
-
-
-       val manager = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-       manager.enqueue(request)
-   }
-
    private fun displayVideo(video_url: String){
 
-       videoView_set_video.settings.javaScriptEnabled = true
-       videoView_set_video.settings.pluginState = PluginState.ON
-           videoView_set_video.loadUrl(video_url)
-       videoView_set_video.webChromeClient = WebChromeClient()
+       val uri = Uri.parse(video_url)
+       mediaController = MediaController(this)
+       videoView_set_video.setVideoURI(uri)
+       progress_bar_video.visibility = View.VISIBLE
+
+       videoView_set_video.setOnPreparedListener {
+
+           mediaController.setAnchorView(video_container)
+           videoView_set_video.setMediaController(mediaController)
+           videoView_set_video.seekTo(playbackPosition)
+           videoView_set_video.start()
+       }
+
+       videoView_set_video.setOnInfoListener { player, what, extras ->
+
+           if(what == MediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START)
+               progress_bar_video.visibility = View.INVISIBLE
+           true
+       }
+
    }
 
 }
